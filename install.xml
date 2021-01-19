@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <modification>
-  <name>Partner Product New</name>
-  <code>partner_product_new</code>
+  <name>Partner Product</name>
+  <code>partner_product</code>
   <version>1.0.0</version>
-  <author>ttt</author>
-  <link>http://ttt.com</link>
+  <author>bbldn05</author>
+  <link>https://t.me/bbldn05</link>
   <!-- Start Admin -->
   <file path="admin/view/template/catalog/product_form.twig">
     <operation>
@@ -31,23 +31,8 @@
     <operation>
         <search><![CDATA[$product_id = $this->db->getLastId();]]></search>
         <add position="after"><![CDATA[
-                $html = true === key_exists('partner_html', $data) ? trim($data['partner_html']) : null;
-                if (null !== $html && 0 === mb_strlen($html)) {
-                    $html = null;
-                }
-        		$query = $this->db->query("SELECT `product_id` FROM `" . DB_PREFIX . "product_partner` WHERE `product_id` = " . (int)$product_id);
-		        
-        		if ($query->num_rows > 0) {
-        		    if (null === $html) {
-        		        $this->db->query("DELETE FROM `" . DB_PREFIX . "product_partner` WHERE `product_id` = " . (int)$product_id);
-			        } else {
-			    	    $this->db->query("UPDATE `" . DB_PREFIX . "product_partner` SET `html` = '" . html_entity_decode($html) . "' WHERE `product_id` = " . (int)$product_id);
-		    	    }
-		        } else {
-			        if (null !== $html) {
-				        $this->db->query("INSERT INTO `" . DB_PREFIX . "product_partner` (`product_id`, `html`) VALUE (" . (int)$product_id . ", '" . html_entity_decode($html) . "')");
-			        }
-		        }
+        $this->load->model('extension/module/parther');
+        $this->model_extension_module_parther->save((int)$product_id, $data);
         ]]></add>
     </operation>
  </file>
@@ -55,132 +40,30 @@
     <operation>
         <search><![CDATA[public function editProduct($product_id, $data) {]]></search>
         <add position="after"><![CDATA[
-                $html = true === key_exists('partner_html', $data) ? trim($data['partner_html']) : null;
-                if (null !== $html && 0 === mb_strlen($html)) {
-                    $html = null;
-                }
-        		$query = $this->db->query("SELECT product_id FROM " . DB_PREFIX . "product_partner WHERE product_id = " . (int)$product_id);
-		        
-        		if ($query->num_rows > 0) {
-        		    if (null === $html) {
-        		        $this->db->query("DELETE FROM `" . DB_PREFIX . "product_partner` WHERE `product_id` = " . (int)$product_id);
-			        } else {
-			    	    $this->db->query("UPDATE `" . DB_PREFIX . "product_partner` SET `html` = '" . html_entity_decode($html) . "' WHERE `product_id` = " . (int)$product_id);
-		    	    }
-		        } else {
-			        if (null !== $html) {
-				        $this->db->query("INSERT INTO `" . DB_PREFIX . "product_partner` (`product_id`, `html`) VALUE (" . (int)$product_id . ", '" . html_entity_decode($html) . "')");
-			        }
-		        }
+        $this->load->model('extension/module/parther');
+        $this->model_extension_module_parther->save((int)$product_id, $data);
         ]]></add>
     </operation>
  </file>
- <file path="admin/model/catalog/product.php">
-    <operation>
-        <search><![CDATA[class ModelCatalogProduct extends Model {]]></search>
-        <add position="after"><![CDATA[
-    /**
-	 * getPartnerByProductId
-	 *
-	 * @param  mixed $product_id
-	 * @return array
-	 */
-	public function getPartnerByProductId($product_id) 
-	{
-		$query = $this->db->query("SELECT COUNT(pp.`product_id`) > 0 as `exists`, pp.`html` FROM `" . DB_PREFIX . "product_partner` pp WHERE pp.`product_id` = " . $product_id);
-		
-		return $query->row;
-	}
-	
-	]]></add>
-    </operation>
-  </file>
   <file path="admin/controller/catalog/product.php">
     <operation>
         <search><![CDATA[if (isset($this->request->post['points'])) {]]></search>
         <add position="before"><![CDATA[
-        $partner = $this->model_catalog_product->getPartnerByProductId((int)$this->request->get['product_id']);
+        $this->load->model('extension/module/parther');
+        $partner = $this->model_extension_module_parther->getPartnerByProductId((int)$this->request->get['product_id']);
 		$data['partner'] = true === key_exists('exists', $partner) ? $partner['exists'] : false;
 		$data['partner_html'] = true === key_exists('html', $partner) ? $partner['html'] : '';
         ]]></add>
     </operation>
   </file>
  <!-- End Admin -->
- <!-- Start Catalog -->
- <file path="catalog/model/catalog/product.php">
-    <operation>
-      <search><![CDATA[public function updateViewed($product_id) {]]></search>
-      <add position="before"><![CDATA[
-    /**
-	 * getPartnerByProductId
-	 *
-	 * @param  mixed $product_id
-	 * @return array
-	 */
-	public function getPartnerByProductId($product_id) 
-	{
-		$query = $this->db->query("SELECT COUNT(pp.`product_id`) > 0 as `exists`, pp.`html` FROM `" . DB_PREFIX . "product_partner` pp WHERE pp.`product_id` = " . $product_id);
-		
-		return $query->row;
-	}
-	
-	/**
-	 * getPartnerByProductIds
-	 *
-	 * @param  int[] $product_ids
-	 * @return array
-	 */
-	public function getPartnerByProductIds($product_ids) 
-	{
-	    $result = [];
-	    if (0 === count($product_ids)) {
-	        return $result;
-	    }
-
-	    foreach($product_ids as $id) {
-	        $result[$id] = false;
-	    }
-
-		$query = $this->db->query("SELECT pp.`product_id` FROM `" . DB_PREFIX . "product_partner` pp WHERE pp.`product_id` IN (" . implode(',', $product_ids) . ")");
-
-		foreach ($query->rows as $row) {
-		    $result[(int)$row['product_id']] = true;
-		}
-
-		return $result;
-	}
-	
-	]]></add>
-    </operation>
-  </file>
-  <file path="catalog/controller/product/product.php">
-    <operation>
-      <search><![CDATA[public function index() {]]></search>
-      <add position="before"><![CDATA[
-			public function partnerIndex() {
-			    $this->load->model('catalog/product');
-			    $partner = $this->model_catalog_product->getPartnerByProductId((int)$this->request->get['partner_id']);
-			    $html = '';
-			    if (true === key_exists('html', $partner)) {
-			        $html = trim(html_entity_decode($partner['html']));
-			    }
-			    if (0 === mb_strlen($html)) {
-			        $html = 'false';
-			    }
-			    $this->response->setOutput($html);
-			}
-      ]]></add>
-    </operation>
-  </file>
- 
- <!-- End Catalog -->
  <!-- Start Theme -->
  <file path="catalog/view/theme/*/template/product/product.twig">
     <operation>
       <search><![CDATA[$('#button-cart').on('click', function() {]]></search>
       <add position="relace"><![CDATA[
 $('#button-cart').on('click', () => {
-    $.get('/index.php?route=product/product/partnerIndex&partner_id={{ product_id }}', (data) => {
+    $.get('/index.php?route=extension/module/parther&partner_id={{ product_id }}', (data) => {
         if ('false' !== data) {
             partnerHandler(data);
             
@@ -232,7 +115,7 @@ const backup1mfmnf = (function() {]]></add>
             $(document).ready(function() {
                 const backup = cart.add;
                 cart.add = function(product_id, quantity) {
-                    $.get(`/index.php?route=product/product/partnerIndex&partner_id=${product_id}`, (data) => {
+                    $.get(`/index.php?route=extension/module/parther&partner_id=${product_id}`, (data) => {
                         if ('false' !== data) {
                             partnerHandler(data);
                             
