@@ -1,3 +1,4 @@
-Модуль "Партнерские товары"
+Module "Affiliate Products"
 
-Позволяет отображать модальное окно (или открывать новую вкладку со ссылкой установленной в административной панели) при нажатии на кнопку "Купить".
+Allows you to display a modal window (or open a new tab with reference 
+installed in the administration panel) when you click on the "Buy" button.
